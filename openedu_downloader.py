@@ -1,23 +1,24 @@
-#created by me and Michael Baranov
-
 import requests
 import re
 import os 
+import sys
+import collections
+import lxml.html as html
+import json
 
 def create_folder(path, folder_name): 
-    #Функция создает директорию по заданному пути
-    if not os.path.exists(path + "/" + re.sub('[^\w_.)( -]', '', folder_name)):
-        os.makedirs(path + "/" + re.sub('[^\w_.)( -]', '', folder_name))
+#Функция создает директорию по заданному пути 
+    if not os.path.exists(path + "\\" + folder_name): 
+        os.makedirs(path + "\\" + folder_name) 
 
 def downloader(url, name, file_type='.mp4'): 
-    #Функция осуществляет загрузку видео-файла по url, в файл name 
-    name += file_type 
-    r = requests.get(url, stream=True)
-    if not os.path.exists(name):
-        with open(name, 'wb') as f: 
-            for chunk in r.iter_content(chunk_size=1024): 
-                if chunk: 
-                    f.write(chunk)
+#Функция осуществляет загрузку видео-файла по url, в файл name 
+    name+=file_type 
+    r = requests.get(url, stream=True) 
+    with open(name, 'wb') as f: 
+        for chunk in r.iter_content(chunk_size=1024): 
+            if chunk: 
+                f.write(chunk) 
 
 def authorizer_and_pagegetter(username, password, URL='https://sso.openedu.ru/login/', next_page='/oauth2/authorize%3Fstate%3DYpbWrm0u6VoE6nOvTi47PQLaC5CB5ZFJ%26redirect_uri%3Dhttps%3A//openedu.ru/complete/npoedsso/%26response_type%3Dcode%26client_id%3D808f52636759e3616f1a%26auth_entry%3Dlogin'): 
     #Функция авторизуется и загружает страницу курса для парсинга. Возвращает страницу курса
@@ -27,23 +28,7 @@ def authorizer_and_pagegetter(username, password, URL='https://sso.openedu.ru/lo
     r = client.post(URL, data=login_data, headers=dict(Referer=URL)) 
     return client
 
-def page_parser(page):
-    #Функция осуществляет парсинг страниц для поиска названий тем и подтем, с ссылками на них
-    dict = {}
-    if re.findall(r'<a class="accordion-nav" href="(.*)"', page) != [] and re.findall(r'<p class="accordion-display-name">(.*) <', page) != []:
-        massive = list(zip(re.findall(r'<p class="accordion-display-name">(.*) <', page), 
-                                  [x + "https://courses.openedu.ru" for x in re.findall(r'<a class="accordion-nav" href="(.*)"', page)]))
-    b = []
-    for a1 in [x[1] for x in massive]:
-        b.append(re.findall(r'/.*/.*/(.*)/.*/', a1))
-    count = [len(list(group)) for key, group in groupby(b)]
-    s,k = 0,0
-    for x in re.findall(r'<span class="group-heading [\w]*" aria-label="(.*)">', page):
-        dict[x] = massive[s:s + count[k]]
-        s += count[k]
-        k += 1
-    return dict
-'''
+
 def page_parser(page):
     #Функция осуществляет парсинг страниц. Возвращает словарь со следующе структурой: ключ - название модуля, значение - список из 2-х элементов
     #первый - название урока, второй - ссылка на страницу урока
@@ -56,40 +41,34 @@ def page_parser(page):
             lst.append([y.find_class('accordion-display-name')[0].text_content(),y.attrib['href']])
         modules[modul_name]=lst
     return modules
-'''  
-def video_finder(page):
-    #функция ищет все видео с темы + названия видео
-    if re.findall(r'http://.*\.mp4', page) != [] and re.findall(r'data-page-title="(.*)"', page) != []:
-        return list(zip(np.array(re.findall(r'http://.*\.mp4', page)[::2]), 
-                               np.array(re.findall(r'data-page-title="(.*)"', page))))
-    else:
-        return 1
-        
-def main():
-    username = input('Ваш логин или email: ')
-    password = input('Ваш пароль: ')
-    course_url = input('Ссылка на курс  (на вкладку "Курс"): ')
-    download_path = re.sub(r'\\', '/', (input('Ссылка на папку загрузки: ')))
-
-    client = authorizer_and_pagegetter(username, password)
-    page = client.get(course_url).text
-    download_path += "/" + re.findall(r'<div class="course-header">\n            \n            (.*)', page)[0]
-    table = page_parser(page)
-
-    for i in table:
-        create_folder(download_path, i)
-        for j in table[i]:
-            video_list = video_finder(client.get("https://courses.openedu.ru" + j[1]).text)
-            g = 1
-            if video_list != 1:
-                for x in video_list:
-                    downloader(x[0], download_path + "/" + re.sub('[^\w_.)( -]', '', i) + "/" + "Лекция {0} ".format(g) + re.sub('[^\w_.)( -]', '', x[1]))
-                    g += 1
-    client.close()
-    print("finish")
     
-if __name__ == '__main__':
-  try:
-    main()
-  except:
-    print('\n', 'Проверьте корректность введенных данных и наличие курса. \nТочно ссылка на вкладку "Курс"?')
+def video_finder(page):
+    #функция ищет все видео с темы
+    videos_with_names = []
+    if re.findall(r'http://.*\.mp4', page) != []:
+        return re.findall(r'http://.*\.mp4', page)[::2]
+        
+username = input('Введите логин для авторизации: ')
+password = input('Введите пароль для авторизации: ')
+url_course = input('Введите ссылку на главную страницу курса: ')
+path = input('Введите путь к директории для скачивания: ')
+folder = input('Введите название папки, в которую будет происходит скачивание: ')
+create_folder(path, folder)
+client = authorizer_and_pagegetter(username, password)
+page = client.get(url_course).text
+dict_with_pages = page_parser(page)
+
+for key in dict_with_pages:
+    create_folder(path+'\\'+folder, key)
+    path_f_v=path+'\\'+folder+'\\'+key+'\\'
+    for i in range(len(dict_with_pages[key])):
+        videos = video_finder(client.get(dict_with_pages[key][i][1]).text)
+        print(videos)
+        if len(videos)>1:
+            for j in range(len(videos)):
+                name = dict_with_pages[key][i][0]+str(j+1)
+                downloader(videos[j], path_f_v+name)
+        else:
+            downloader(videos[0], path_f_v+dict_with_pages[key][i][0])
+client.close()
+print('Скачивание закончено')
