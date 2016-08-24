@@ -1,2 +1,5 @@
-# openedu_downloader
-Using this srcipt you can download all video lectures from course.
+# OpenEdu Downloader
+Используя этот скрипт вы можете скачать все видео сразу с любого, понравившегося вам курса, с платформы openedu.ru.
+
+# Краткий мануал
+1). 
