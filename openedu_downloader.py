@@ -73,8 +73,8 @@ def main():
     client.close()
     print("finish")
     
-  if __name__ == '__main__':
-      try:
+if __name__ == '__main__':
+    try:
         main()
-      except:
+    except:
         print('\n', 'Проверьте корректность введенных данных и наличие курса. \nТочно ссылка на вкладку "Курс"? \nВсе верно?)
