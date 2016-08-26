@@ -12,14 +12,21 @@ def create_folder(path, folder_name):
         os.makedirs(path + "/" + re.sub('[^\w_.)( -]', '', folder_name))
 
 def downloader(url, name, file_type='.mp4'): 
-    #Функция осуществляет загрузку видео-файла по url, в файл name 
+    #Функция осуществляет загрузку видео-файла по url, в файл name
     name += file_type 
     r = requests.get(url, stream=True)
     if not os.path.exists(name):
-        with open(name, 'wb') as f: 
-            for chunk in r.iter_content(chunk_size=1024): 
-                if chunk: 
-                    f.write(chunk)
+        if len(name) <= 260:
+            with open(name, 'wb') as f: 
+                for chunk in r.iter_content(chunk_size=1024): 
+                    if chunk: 
+                        f.write(chunk)
+        else:
+            print("\n{0}\n{1}\n Имена файлов слишком длинны для помещения в эту папку. Некоторым лекциям будет присвоено имя формата 'Лекция №'".format(*list(map(list, re.findall(r'.*/(.*)/(.*)', name)))[0]) + "\n")
+            with open(re.findall(r'(.*Лекция \d*)', name)[0] + file_type, 'wb') as f: 
+                for chunk in r.iter_content(chunk_size=1024): 
+                    if chunk: 
+                        f.write(chunk)
 
 def authorizer_and_pagegetter(username, password, URL='https://sso.openedu.ru/login/', next_page='/oauth2/authorize%3Fstate%3DYpbWrm0u6VoE6nOvTi47PQLaC5CB5ZFJ%26redirect_uri%3Dhttps%3A//openedu.ru/complete/npoedsso/%26response_type%3Dcode%26client_id%3D808f52636759e3616f1a%26auth_entry%3Dlogin'): 
     #Функция авторизуется и загружает страницу курса для парсинга. Возвращает страницу курса
