@@ -22,7 +22,7 @@ def downloader(url, name, file_type='.mp4'):
                     if chunk: 
                         f.write(chunk)
         else:
-            print("\n{0}\n{1}\n Имена файлов слишком длинны для помещения в эту папку. Некоторым лекциям будет присвоено имя формата 'Лекция №'".format(*list(map(list, re.findall(r'.*/(.*)/(.*)', name)))[0]) + "\n")
+            print("\n{0}\n{1}\nИмена файлов слишком длинны для перемещения в эту целевую папку. Лекции будет присвоено имя формата 'Лекция №'".format(*list(map(list, re.findall(r'.*/(.*)/(.*)', name)))[0]) + "\n")
             with open(re.findall(r'(.*Лекция \d*)', name)[0] + file_type, 'wb') as f: 
                 for chunk in r.iter_content(chunk_size=1024): 
                     if chunk: 
